@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Star Blocks</title>
+  <style>
+    :root{
+      --bg1:#fff8fc;
+      --bg2:#eef7ff;
+      --panel:rgba(255,255,255,.92);
+      --panel-strong:rgba(255,255,255,.98);
+      --text:#585878;
+      --sub:#8a8aa5;
+      --accent:#ff88ba;
+      --accent2:#8bcfff;
+      --accent3:#ffd976;
+      --good:#7ed9a7;
+      --bad:#ff95a7;
+      --shadow:0 14px 30px rgba(138,150,188,.18);
+      --cell-size:min(10.2vw,46px);
+      --gap:5px;
+      --board-padding:10px;
+    }
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+      user-select:none;
+      touch-action:none;
+    }
+    html,body{
+      margin:0;
+      padding:0;
+      min-height:100%;
+      font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;
+      background:
+        radial-gradient(circle at 18% 12%, #fff0f8 0%, transparent 24%),
+        radial-gradient(circle at 82% 18%, #e8f7ff 0%, transparent 23%),
+        radial-gradient(circle at 70% 78%, #fff4d8 0%, transparent 18%),
+        linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:var(--text);
+      overflow-x:hidden;
+    }
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:.45;
+      background-image:
+        radial-gradient(circle at 15% 25%, rgba(255,255,255,.85) 0 2px, transparent 3px),
+        radial-gradient(circle at 80% 35%, rgba(255,255,255,.85) 0 2px, transparent 3px),
+        radial-gradient(circle at 24% 78%, rgba(255,255,255,.8) 0 2px, transparent 3px),
+        radial-gradient(circle at 68% 80%, rgba(255,255,255,.85) 0 2px, transparent 3px);
+    }
+    .app{
+      width:100%;
+      max-width:460px;
+      margin:0 auto;
+      padding:14px;
+      min-height:100vh;
+      position:relative;
+    }
+    .screen{ display:none; }
+    .screen.active{ display:block; }
+    .title-wrap{
+      text-align:center;
+      margin:14px 0 18px;
+    }
+    .title{
+      margin:0;
+      font-size:32px;
+      font-weight:900;
+      color:#ff72ad;
+      letter-spacing:-.03em;
+    }
+    .subtitle{
+      margin-top:6px;
+      font-size:13px;
+      color:var(--sub);
+      font-weight:800;
+    }
+    .panel{
+      background:var(--panel);
+      border-radius:22px;
+      padding:14px;
+      border:1px solid rgba(255,255,255,.85);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(8px);
+    }
+    .menu-stats{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .stat-card{
+      background:linear-gradient(180deg,#fff,#faf8ff);
+      border-radius:18px;
+      padding:14px 10px;
+      text-align:center;
+      box-shadow:0 10px 18px rgba(154,169,210,.14);
+      border:1px solid rgba(255,255,255,.88);
+    }
+    .stat-label{
+      font-size:12px;
+      color:var(--sub);
+      font-weight:800;
+      margin-bottom:4px;
+    }
+    .stat-value{
+      font-size:24px;
+      font-weight:900;
+    }
+    .menu-buttons{
+      display:grid;
+      gap:10px;
+    }
+    button{
+      border:0;
+      border-radius:16px;
+      padding:14px 12px;
+      font-size:15px;
+      font-weight:900;
+      cursor:pointer;
+      color:#fff;
+      background:linear-gradient(180deg,#ff9cc9,#ff7fb7);
+      box-shadow:0 10px 18px rgba(255,128,183,.24);
+      transition:transform .08s ease, filter .12s ease;
+    }
+    button:active{ transform:scale(.97); }
+    .btn-blue{
+      background:linear-gradient(180deg,#9ed8ff,#78c4ff);
+      box-shadow:0 10px 18px rgba(120,196,255,.24);
+    }
+    .btn-yellow{
+      background:linear-gradient(180deg,#ffe7a8,#ffd776);
+      color:#6e5e2b;
+      box-shadow:0 10px 18px rgba(255,215,118,.24);
+    }
+    .btn-gray{
+      background:linear-gradient(180deg,#afb8d8,#8c97bd);
+      box-shadow:0 10px 18px rgba(140,151,189,.24);
+    }
+
+    .top-cards{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:8px;
+      margin-bottom:12px;
+    }
+    .card{
+      background:var(--panel);
+      border-radius:18px;
+      padding:11px 8px;
+      text-align:center;
+      border:1px solid rgba(255,255,255,.85);
+      box-shadow:var(--shadow);
+    }
+    .card .label{
+      font-size:11px;
+      color:var(--sub);
+      font-weight:800;
+      margin-bottom:4px;
+    }
+    .card .value{
+      font-size:18px;
+      font-weight:900;
+    }
+
+    .game-panel{
+      background:var(--panel-strong);
+      border-radius:24px;
+      padding:12px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(255,255,255,.9);
+    }
+    .game-topbar{
+      display:flex;
+      justify-content:flex-end;
+      margin-bottom:10px;
+    }
+    .mini-home{
+      width:auto;
+      padding:10px 14px;
+      font-size:13px;
+    }
+    .board-wrap{
+      position:relative;
+      display:flex;
+      justify-content:center;
+      margin-bottom:12px;
+      transition:transform .12s ease, filter .12s ease;
+    }
+    .board{
+      display:grid;
+      grid-template-columns:repeat(8,var(--cell-size));
+      grid-template-rows:repeat(8,var(--cell-size));
+      gap:var(--gap);
+      background:linear-gradient(180deg,#f7fbff,#fffaff);
+      padding:var(--board-padding);
+      border-radius:24px;
+      border:1px solid rgba(255,255,255,.9);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 -8px 18px rgba(205,215,255,.16);
+    }
+    .cell{
+      width:var(--cell-size);
+      height:var(--cell-size);
+      background:linear-gradient(180deg,#f3f5ff,#eef6ff);
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.8);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.85), inset 0 -5px 10px rgba(180,195,255,.08);
+      transition:transform .08s ease, background .08s ease, filter .12s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .filled{
+      box-shadow:inset 0 2px 0 rgba(255,255,255,.45), inset 0 -7px 12px rgba(0,0,0,.08), 0 5px 10px rgba(100,130,190,.14);
+      transform:scale(.98);
+    }
+    .filled.skin-default{ background:linear-gradient(180deg,#91cfff,#68b9ff); }
+    .filled.skin-peach{ background:linear-gradient(180deg,#ffc0ca,#ff9fb2); }
+    .filled.skin-mint{ background:linear-gradient(180deg,#a8f0cd,#7be0b1); }
+    .filled.skin-lemon{ background:linear-gradient(180deg,#ffe699,#ffd15a); }
+    .filled.skin-lavender{ background:linear-gradient(180deg,#d6c4ff,#b79cff); }
+    .preview-ok{ background:linear-gradient(180deg,#a8efc5,#72d79b)!important; }
+    .preview-bad{ background:linear-gradient(180deg,#ffc2cf,#ff8fa2)!important; }
+
+    .pieces-panel{
+      background:var(--panel);
+      border-radius:18px;
+      padding:10px;
+      border:1px solid rgba(255,255,255,.88);
+      box-shadow:var(--shadow);
+    }
+    .section-title{
+      font-size:13px;
+      font-weight:900;
+      color:var(--sub);
+      margin-bottom:8px;
+    }
+    .pieces{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+    }
+    .piece{
+      min-height:94px;
+      border-radius:18px;
+      background:linear-gradient(180deg,#fff,#f9f5ff);
+      border:2px solid rgba(255,255,255,.88);
+      box-shadow:0 10px 18px rgba(154,169,210,.16), inset 0 1px 0 rgba(255,255,255,.9);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:transform .12s ease, border-color .12s ease;
+      touch-action:none;
+    }
+    .piece.selected{
+      transform:translateY(-2px) scale(1.02);
+      border-color:rgba(255,148,194,.92);
+    }
+    .mini-grid{ display:grid; gap:4px; }
+    .mini-cell{
+      width:16px;
+      height:16px;
+      border-radius:5px;
+      background:transparent;
+    }
+    .mini-fill{
+      background:linear-gradient(180deg,#9ed6ff,#6fbfff);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.55), inset 0 -5px 8px rgba(0,0,0,.08);
+    }
+    .piece.skin-peach .mini-fill{ background:linear-gradient(180deg,#ffc4cf,#ff9fb2); }
+    .piece.skin-mint .mini-fill{ background:linear-gradient(180deg,#b0f2d2,#7be0b1); }
+    .piece.skin-lemon .mini-fill{ background:linear-gradient(180deg,#ffe8a6,#ffd25d); }
+    .piece.skin-lavender .mini-fill{ background:linear-gradient(180deg,#dbcaff,#b79cff); }
+
+    .shop-list{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:8px;
+    }
+    .skin-item{
+      background:linear-gradient(180deg,#fff,#faf7ff);
+      border-radius:16px;
+      padding:10px;
+      border:1px solid rgba(255,255,255,.88);
+      box-shadow:0 8px 16px rgba(154,169,210,.12);
+    }
+    .skin-top{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:6px;
+    }
+    .skin-name{
+      font-size:13px;
+      font-weight:900;
+    }
+    .skin-price{
+      font-size:12px;
+      font-weight:900;
+      color:#ff76af;
+      white-space:nowrap;
+    }
+    .skin-preview{
+      height:36px;
+      border-radius:12px;
+      margin-bottom:8px;
+      border:1px solid rgba(255,255,255,.8);
+    }
+    .skin-preview.skin-default{ background:linear-gradient(180deg,#91cfff,#68b9ff); }
+    .skin-preview.skin-peach{ background:linear-gradient(180deg,#ffc0ca,#ff9fb2); }
+    .skin-preview.skin-mint{ background:linear-gradient(180deg,#a8f0cd,#7be0b1); }
+    .skin-preview.skin-lemon{ background:linear-gradient(180deg,#ffe699,#ffd15a); }
+    .skin-preview.skin-lavender{ background:linear-gradient(180deg,#d6c4ff,#b79cff); }
+    .skin-actions{ display:flex; gap:6px; }
+    .skin-actions button{
+      flex:1;
+      padding:9px 8px;
+      font-size:12px;
+      border-radius:12px;
+    }
+
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(56,57,88,.35);
+      backdrop-filter:blur(4px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9990;
+      padding:16px;
+    }
+    .modal-backdrop.active{ display:flex; }
+    .modal{
+      width:100%;
+      max-width:420px;
+      background:rgba(255,255,255,.98);
+      border-radius:24px;
+      padding:16px;
+      border:1px solid rgba(255,255,255,.9);
+      box-shadow:0 20px 40px rgba(84,92,126,.24);
+    }
+    .modal-title{
+      font-size:20px;
+      font-weight:900;
+      margin-bottom:8px;
+      color:#ff73ae;
+    }
+    .modal-text{
+      font-size:14px;
+      line-height:1.6;
+      color:var(--text);
+      white-space:pre-line;
+    }
+    .modal-actions{
+      margin-top:14px;
+      display:grid;
+      gap:8px;
+    }
+
+    .combo-float,.score-float,.toast{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:9999;
+      pointer-events:none;
+      text-align:center;
+      font-weight:900;
+    }
+    .combo-float{
+      top:22%;
+      font-size:30px;
+      color:#ff80b7;
+      text-shadow:0 2px 0 rgba(255,255,255,.9), 0 8px 22px rgba(255,122,181,.28);
+      animation:comboPop .8s ease forwards;
+    }
+    @keyframes comboPop{
+      0%{ opacity:0; transform:translateX(-50%) translateY(18px) scale(.8); }
+      20%{ opacity:1; transform:translateX(-50%) translateY(0) scale(1.05); }
+      100%{ opacity:0; transform:translateX(-50%) translateY(-24px) scale(1); }
+    }
+    .score-float{
+      top:30%;
+      font-size:18px;
+      color:#6a7eff;
+      animation:scoreRise .7s ease forwards;
+    }
+    @keyframes scoreRise{
+      0%{ opacity:0; transform:translateX(-50%) translateY(8px); }
+      25%{ opacity:1; transform:translateX(-50%) translateY(0); }
+      100%{ opacity:0; transform:translateX(-50%) translateY(-20px); }
+    }
+    .toast{
+      bottom:92px;
+      background:rgba(77,77,107,.92);
+      color:#fff;
+      border-radius:999px;
+      padding:10px 14px;
+      font-size:13px;
+      animation:toastInOut 1.2s ease forwards;
+      box-shadow:0 10px 20px rgba(77,77,107,.24);
+    }
+    @keyframes toastInOut{
+      0%{ opacity:0; transform:translateX(-50%) translateY(8px); }
+      20%{ opacity:1; transform:translateX(-50%) translateY(0); }
+      80%{ opacity:1; transform:translateX(-50%) translateY(0); }
+      100%{ opacity:0; transform:translateX(-50%) translateY(8px); }
+    }
+
+    .drag-ghost{
+      position:fixed;
+      pointer-events:none;
+      z-index:9998;
+      opacity:.95;
+      transform:translate(-50%,-50%);
+      filter:drop-shadow(0 12px 18px rgba(109,130,192,.26));
+    }
+    .drag-ghost-grid{
+      display:grid;
+      gap:4px;
+      background:rgba(255,255,255,.8);
+      padding:8px;
+      border-radius:16px;
+      border:2px solid rgba(255,255,255,.85);
+      backdrop-filter:blur(4px);
+    }
+    .drag-ghost-cell{
+      width:18px;
+      height:18px;
+      border-radius:6px;
+      background:transparent;
+    }
+    .drag-ghost-fill.skin-default{ background:linear-gradient(180deg,#91cfff,#68b9ff); }
+    .drag-ghost-fill.skin-peach{ background:linear-gradient(180deg,#ffc0ca,#ff9fb2); }
+    .drag-ghost-fill.skin-mint{ background:linear-gradient(180deg,#a8f0cd,#7be0b1); }
+    .drag-ghost-fill.skin-lemon{ background:linear-gradient(180deg,#ffe699,#ffd15a); }
+    .drag-ghost-fill.skin-lavender{ background:linear-gradient(180deg,#d6c4ff,#b79cff); }
+
+    @media (max-width:390px){
+      :root{
+        --cell-size:min(10vw,42px);
+        --gap:4px;
+      }
+      .shop-list{ grid-template-columns:1fr; }
+      .piece{ min-height:88px; }
+      .mini-cell{ width:14px; height:14px; }
+      .top-cards .card .value{ font-size:16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- 시작 화면 -->
+    <section class="screen active" id="homeScreen">
+      <div class="title-wrap">
+        <h1 class="title">Star Blocks</h1>
+        <div class="subtitle">귀엽게 놓고, 반짝이게 터뜨리자 ✨</div>
+      </div>
+
+      <div class="panel">
+        <div class="menu-stats">
+          <div class="stat-card">
+            <div class="stat-label">최고기록</div>
+            <div class="stat-value" id="homeBestScore">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">보유 별</div>
+            <div class="stat-value" id="homeStars">0</div>
+          </div>
+        </div>
+
+        <div class="menu-buttons">
+          <button id="startGameBtn">게임 시작</button>
+          <button id="openShopBtn" class="btn-blue">상점</button>
+          <button id="openSettingsBtn" class="btn-yellow">설정</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 게임 화면 -->
+    <section class="screen" id="gameScreen">
+      <div class="top-cards">
+        <div class="card">
+          <div class="label">점수</div>
+          <div class="value" id="score">0</div>
+        </div>
+        <div class="card">
+          <div class="label">최고기록</div>
+          <div class="value" id="bestScore">0</div>
+        </div>
+        <div class="card">
+          <div class="label">별</div>
+          <div class="value" id="stars">0</div>
+        </div>
+        <div class="card">
+          <div class="label">콤보</div>
+          <div class="value" id="combo">0</div>
+        </div>
+      </div>
+
+      <div class="game-panel">
+        <div class="game-topbar">
+          <button class="mini-home btn-gray" id="goHomeBtn">홈</button>
+        </div>
+
+        <div class="board-wrap" id="boardWrap">
+          <div class="board" id="board"></div>
+        </div>
+
+        <div class="pieces-panel">
+          <div class="section-title">블록</div>
+          <div class="pieces" id="pieces"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 상점 화면 -->
+    <section class="screen" id="shopScreen">
+      <div class="title-wrap" style="margin-top:4px;">
+        <h1 class="title" style="font-size:28px;">스킨 상점</h1>
+        <div class="subtitle">별로 원하는 스킨을 구매해봐</div>
+      </div>
+
+      <div class="panel" style="margin-bottom:12px;">
+        <div class="menu-stats" style="grid-template-columns:1fr;">
+          <div class="stat-card">
+            <div class="stat-label">보유 별</div>
+            <div class="stat-value" id="shopStars">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:12px;">
+        <div class="shop-list" id="shopList"></div>
+      </div>
+
+      <div class="menu-buttons">
+        <button class="btn-gray" id="shopBackBtn">뒤로가기</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 설정 모달 -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal">
+      <div class="modal-title">설정</div>
+      <div class="modal-text">필요한 기능만 여기로 모아뒀어.</div>
+      <div class="modal-actions">
+        <button id="newGameBtn">새 게임</button>
+        <button id="soundToggleBtn" class="btn-blue">사운드 ON</button>
+        <button id="showStarGuideBtn" class="btn-yellow">별 얻는 방법</button>
+        <button id="closeSettingsBtn" class="btn-gray">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 별 가이드 모달 -->
+  <div class="modal-backdrop" id="starGuideModal">
+    <div class="modal">
+      <div class="modal-title">별 얻는 방법</div>
+      <div class="modal-text">점수에 따라 별을 얻을 수 있어.
+
+0~149점: 2별
+150~399점: 4별
+400~799점: 7별
+800~1299점: 10별
+1300점 이상: 14별
+
+추가 보상:
+- 최고기록 갱신: +3별
+- 2줄 이상 동시 삭제: +1별
+- 콤보 3 이상 달성: +1별</div>
+      <div class="modal-actions">
+        <button id="closeStarGuideBtn" class="btn-gray">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 게임오버 모달 -->
+  <div class="modal-backdrop" id="gameOverModal">
+    <div class="modal">
+      <div class="modal-title">게임 오버</div>
+      <div class="modal-text" id="gameOverText"></div>
+      <div class="modal-actions">
+        <button id="retryBtn">다시하기</button>
+        <button id="gameOverHomeBtn" class="btn-gray">홈으로</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SIZE = 8;
+    const STORAGE_KEY = "star_blocks_save_v9";
+
+    const SHAPES = [
+      [[1]],
+      [[1,1]],
+      [[1],[1]],
+      [[1,1,1]],
+      [[1],[1],[1]],
+      [[1,1],[1,1]],
+      [[1,0],[1,1]],
+      [[0,1],[1,1]],
+      [[1,1,0],[0,1,1]],
+      [[0,1,1],[1,1,0]],
+      [[1,1,1],[0,1,0]],
+      [[1,0,0],[1,1,1]],
+      [[0,0,1],[1,1,1]]
+    ];
+
+    const SKINS = [
+      { id: "default", name: "기본", price: 0 },
+      { id: "peach", name: "복숭아", price: 25 },
+      { id: "mint", name: "민트", price: 40 },
+      { id: "lemon", name: "레몬", price: 55 },
+      { id: "lavender", name: "라벤더", price: 75 }
+    ];
+
+    const state = {
+      board: [],
+      score: 0,
+      bestScore: 0,
+      stars: 0,
+      combo: 0,
+      selectedPieceIndex: null,
+      pieces: [],
+      ownedSkins: ["default"],
+      equippedSkin: "default",
+      soundOn: true,
+      gameOver: false
+    };
+
+    const dragState = {
+      active: false,
+      pieceIndex: null,
+      pointerId: null,
+      shape: null,
+      ghostEl: null,
+      preview: null
+    };
+
+    const screens = {
+      home: document.getElementById("homeScreen"),
+      game: document.getElementById("gameScreen"),
+      shop: document.getElementById("shopScreen")
+    };
+
+    const boardEl = document.getElementById("board");
+    const boardWrapEl = document.getElementById("boardWrap");
+    const piecesEl = document.getElementById("pieces");
+    const shopListEl = document.getElementById("shopList");
+
+    const scoreEl = document.getElementById("score");
+    const bestScoreEl = document.getElementById("bestScore");
+    const starsEl = document.getElementById("stars");
+    const comboEl = document.getElementById("combo");
+    const homeBestScoreEl = document.getElementById("homeBestScore");
+    const homeStarsEl = document.getElementById("homeStars");
+    const shopStarsEl = document.getElementById("shopStars");
+
+    const settingsModal = document.getElementById("settingsModal");
+    const starGuideModal = document.getElementById("starGuideModal");
+    const gameOverModal = document.getElementById("gameOverModal");
+    const gameOverText = document.getElementById("gameOverText");
+
+    function emptyBoard() {
+      return Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+    }
+
+    function deepCopyShape(shape) {
+      return shape.map(row => [...row]);
+    }
+
+    function randomShape() {
+      return deepCopyShape(SHAPES[Math.floor(Math.random() * SHAPES.length)]);
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        bestScore: state.bestScore,
+        stars: state.stars,
+        ownedSkins: state.ownedSkins,
+        equippedSkin: state.equippedSkin,
+        soundOn: state.soundOn
+      }));
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+
+        if (typeof data.bestScore === "number") state.bestScore = data.bestScore;
+        if (typeof data.stars === "number") state.stars = data.stars;
+        if (Array.isArray(data.ownedSkins) && data.ownedSkins.length) state.ownedSkins = data.ownedSkins;
+        if (typeof data.equippedSkin === "string") state.equippedSkin = data.equippedSkin;
+        if (typeof data.soundOn === "boolean") state.soundOn = data.soundOn;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function showScreen(name) {
+      Object.values(screens).forEach(el => el.classList.remove("active"));
+      screens[name].classList.add("active");
+      updateHeader();
+    }
+
+    function openModal(modal) {
+      modal.classList.add("active");
+    }
+
+    function closeModal(modal) {
+      modal.classList.remove("active");
+    }
+
+    function updateHeader() {
+      scoreEl.textContent = state.score;
+      bestScoreEl.textContent = state.bestScore;
+      starsEl.textContent = state.stars;
+      comboEl.textContent = state.combo;
+      homeBestScoreEl.textContent = state.bestScore;
+      homeStarsEl.textContent = state.stars;
+      shopStarsEl.textContent = state.stars;
+      document.getElementById("soundToggleBtn").textContent = state.soundOn ? "사운드 ON" : "사운드 OFF";
+    }
+
+    function getSkinClass() {
+      return `skin-${state.equippedSkin}`;
+    }
+
+    function generatePieces() {
+      state.pieces = [randomShape(), randomShape(), randomShape()];
+      state.selectedPieceIndex = null;
+      renderPieces();
+    }
+
+    function renderBoard(preview = null) {
+      boardEl.innerHTML = "";
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          if (state.board[r][c]) cell.classList.add("filled", getSkinClass());
+
+          if (preview) {
+            const isPreview = preview.cells.some(([pr, pc]) => pr === r && pc === c);
+            if (isPreview) cell.classList.add(preview.ok ? "preview-ok" : "preview-bad");
+          }
+
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function renderPieces() {
+      piecesEl.innerHTML = "";
+      state.pieces.forEach((shape, index) => {
+        const piece = document.createElement("div");
+        piece.className = `piece ${getSkinClass()}`;
+        if (state.selectedPieceIndex === index) piece.classList.add("selected");
+
+        const mini = document.createElement("div");
+        mini.className = "mini-grid";
+        mini.style.gridTemplateColumns = `repeat(${shape[0].length}, 16px)`;
+
+        for (let r = 0; r < shape.length; r++) {
+          for (let c = 0; c < shape[r].length; c++) {
+            const miniCell = document.createElement("div");
+            miniCell.className = "mini-cell";
+            if (shape[r][c]) miniCell.classList.add("mini-fill");
+            mini.appendChild(miniCell);
+          }
+        }
+
+        piece.appendChild(mini);
+
+        piece.addEventListener("click", () => {
+          state.selectedPieceIndex = index;
+          renderPieces();
+          renderBoard();
+        });
+
+        piece.addEventListener("pointerdown", (e) => {
+          startDrag(index, e);
+        });
+
+        piecesEl.appendChild(piece);
+      });
+    }
+
+    function renderShop() {
+      shopListEl.innerHTML = "";
+      SKINS.forEach((skin) => {
+        const item = document.createElement("div");
+        item.className = "skin-item";
+
+        const top = document.createElement("div");
+        top.className = "skin-top";
+
+        const name = document.createElement("div");
+        name.className = "skin-name";
+        name.textContent = skin.name;
+
+        const price = document.createElement("div");
+        price.className = "skin-price";
+        price.textContent = skin.price === 0 ? "무료" : `⭐ ${skin.price}`;
+
+        top.appendChild(name);
+        top.appendChild(price);
+
+        const preview = document.createElement("div");
+        preview.className = `skin-preview skin-${skin.id}`;
+
+        const actions = document.createElement("div");
+        actions.className = "skin-actions";
+
+        const owned = state.ownedSkins.includes(skin.id);
+
+        if (!owned) {
+          const buyBtn = document.createElement("button");
+          buyBtn.textContent = "구매";
+          buyBtn.addEventListener("click", () => buySkin(skin.id));
+          actions.appendChild(buyBtn);
+        } else if (state.equippedSkin === skin.id) {
+          const usingBtn = document.createElement("button");
+          usingBtn.className = "btn-blue";
+          usingBtn.textContent = "사용 중";
+          usingBtn.disabled = true;
+          actions.appendChild(usingBtn);
+        } else {
+          const equipBtn = document.createElement("button");
+          equipBtn.className = "btn-blue";
+          equipBtn.textContent = "장착";
+          equipBtn.addEventListener("click", () => equipSkin(skin.id));
+          actions.appendChild(equipBtn);
+        }
+
+        item.appendChild(top);
+        item.appendChild(preview);
+        item.appendChild(actions);
+        shopListEl.appendChild(item);
+      });
+    }
+
+    function buySkin(id) {
+      const skin = SKINS.find(s => s.id === id);
+      if (!skin) return;
+      if (state.ownedSkins.includes(id)) return toast("이미 가진 스킨이야.");
+      if (state.stars < skin.price) return toast("별이 부족해.");
+
+      state.stars -= skin.price;
+      state.ownedSkins.push(id);
+      state.equippedSkin = id;
+      saveState();
+      updateHeader();
+      renderBoard();
+      renderPieces();
+      renderShop();
+      toast(`${skin.name} 스킨 구매 완료!`);
+      playSound("buy");
+    }
+
+    function equipSkin(id) {
+      if (!state.ownedSkins.includes(id)) return;
+      state.equippedSkin = id;
+      saveState();
+      renderBoard();
+      renderPieces();
+      renderShop();
+      toast("스킨을 장착했어.");
+    }
+
+    function canPlace(shape, row, col) {
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (!shape[r][c]) continue;
+          const br = row + r;
+          const bc = col + c;
+          if (br < 0 || br >= SIZE || bc < 0 || bc >= SIZE) return false;
+          if (state.board[br][bc]) return false;
+        }
+      }
+      return true;
+    }
+
+    function getPreview(shape, row, col) {
+      const cells = [];
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (!shape[r][c]) continue;
+          cells.push([row + r, col + c]);
+        }
+      }
+      return { cells, ok: canPlace(shape, row, col), row, col };
+    }
+
+    function nearestPlacementFromPoint(clientX, clientY, shape) {
+      const boardRect = boardEl.getBoundingClientRect();
+      const cellSize = boardRect.width / SIZE;
+      const shapeHeight = shape.length;
+      const shapeWidth = shape[0].length;
+
+      const relativeX = clientX - boardRect.left;
+      const relativeY = clientY - boardRect.top;
+
+      const centerCol = Math.round(relativeX / cellSize - shapeWidth / 2);
+      const centerRow = Math.round(relativeY / cellSize - shapeHeight / 2);
+
+      let best = null;
+
+      for (let row = centerRow - 1; row <= centerRow + 1; row++) {
+        for (let col = centerCol - 1; col <= centerCol + 1; col++) {
+          const preview = getPreview(shape, row, col);
+          const dist = Math.abs(row - centerRow) + Math.abs(col - centerCol);
+
+          if (preview.ok) {
+            if (!best || dist < best.dist) best = { ...preview, dist };
+          } else if (!best) {
+            best = { ...preview, dist };
+          }
+        }
+      }
+
+      return best || getPreview(shape, centerRow, centerCol);
+    }
+
+    function clearLines() {
+      const fullRows = [];
+      const fullCols = [];
+
+      for (let r = 0; r < SIZE; r++) {
+        if (state.board[r].every(v => v === 1)) fullRows.push(r);
+      }
+
+      for (let c = 0; c < SIZE; c++) {
+        let full = true;
+        for (let r = 0; r < SIZE; r++) {
+          if (!state.board[r][c]) {
+            full = false;
+            break;
+          }
+        }
+        if (full) fullCols.push(c);
+      }
+
+      if (fullRows.length === 0 && fullCols.length === 0) return 0;
+
+      fullRows.forEach(r => {
+        for (let c = 0; c < SIZE; c++) state.board[r][c] = 0;
+      });
+
+      fullCols.forEach(c => {
+        for (let r = 0; r < SIZE; r++) state.board[r][c] = 0;
+      });
+
+      boardClearEffect();
+      playSound("clear");
+      return fullRows.length + fullCols.length;
+    }
+
+    function applyScore(clearedLines, placedCells) {
+      let gain = placedCells;
+      let extraStars = 0;
+      let newBestBonus = 0;
+
+      if (clearedLines > 0) {
+        state.combo += 1;
+        const comboMultiplier = 1 + (state.combo - 1) * 0.35;
+        gain += Math.round(clearedLines * 12 * comboMultiplier);
+
+        comboFloat(`콤보 x${state.combo}`);
+        scoreFloat(`+${gain}`);
+        playSound("combo");
+
+        if (clearedLines >= 2) {
+          extraStars += 1;
+          toast(`${clearedLines}줄 동시 제거! ⭐ +1`);
+        }
+
+        if (state.combo >= 3) {
+          extraStars += 1;
+          toast(`콤보 보너스! ⭐ +1`);
+        }
+      } else {
+        state.combo = 0;
+        scoreFloat(`+${gain}`);
+      }
+
+      state.score += gain;
+
+      if (state.score > state.bestScore) {
+        if (state.bestScore > 0) {
+          newBestBonus = 3;
+        }
+        state.bestScore = state.score;
+      }
+
+      if (extraStars > 0 || newBestBonus > 0) {
+        state.stars += extraStars + newBestBonus;
+        updateHeader();
+        saveState();
+      }
+    }
+
+    function getEndStars(score) {
+      if (score >= 1300) return 14;
+      if (score >= 800) return 10;
+      if (score >= 400) return 7;
+      if (score >= 150) return 4;
+      return 2;
+    }
+
+    function boardSnapEffect() {
+      boardWrapEl.style.transform = "scale(1.025)";
+      setTimeout(() => boardWrapEl.style.transform = "scale(1)", 90);
+    }
+
+    function boardClearEffect() {
+      boardWrapEl.style.filter = "brightness(1.08) saturate(1.05)";
+      setTimeout(() => boardWrapEl.style.filter = "brightness(1) saturate(1)", 140);
+    }
+
+    function comboFloat(text) {
+      const el = document.createElement("div");
+      el.className = "combo-float";
+      el.textContent = text;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 800);
+    }
+
+    function scoreFloat(text) {
+      const el = document.createElement("div");
+      el.className = "score-float";
+      el.textContent = text;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 700);
+    }
+
+    function toast(text) {
+      const el = document.createElement("div");
+      el.className = "toast";
+      el.textContent = text;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1200);
+    }
+
+    function hasAnyMove() {
+      for (const shape of state.pieces) {
+        for (let row = 0; row < SIZE; row++) {
+          for (let col = 0; col < SIZE; col++) {
+            if (canPlace(shape, row, col)) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function placeShape(shape, row, col) {
+      let placedCells = 0;
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (!shape[r][c]) continue;
+          state.board[row + r][col + c] = 1;
+          placedCells++;
+        }
+      }
+
+      const cleared = clearLines();
+      applyScore(cleared, placedCells);
+
+      boardSnapEffect();
+      playSound("place");
+      renderBoard();
+      renderPieces();
+      updateHeader();
+      saveState();
+    }
+
+    function finishTurnAfterUsingPiece(pieceIndex) {
+      state.pieces.splice(pieceIndex, 1);
+      state.selectedPieceIndex = null;
+
+      if (state.pieces.length === 0) {
+        generatePieces();
+        toast("새 블록 3개 등장!");
+      } else {
+        renderPieces();
+      }
+
+      updateHeader();
+
+      if (!hasAnyMove()) {
+        state.gameOver = true;
+        const endStars = getEndStars(state.score);
+        state.stars += endStars;
+        saveState();
+        updateHeader();
+        renderShop();
+
+        gameOverText.textContent =
+          `최종 점수: ${state.score}점\n이번 판 획득 별: ${endStars}개`;
+        openModal(gameOverModal);
+      }
+    }
+
+    function tryPlaceByTap(row, col) {
+      if (state.gameOver) return;
+      if (state.selectedPieceIndex === null) return;
+
+      const shape = state.pieces[state.selectedPieceIndex];
+      const preview = getPreview(shape, row, col);
+      renderBoard(preview);
+
+      if (!preview.ok) {
+        playSound("bad");
+        return;
+      }
+
+      placeShape(shape, row, col);
+      finishTurnAfterUsingPiece(state.selectedPieceIndex);
+      renderBoard();
+    }
+
+    function createGhost(shape, x, y) {
+      removeGhost();
+
+      const ghost = document.createElement("div");
+      ghost.className = "drag-ghost";
+
+      const grid = document.createElement("div");
+      grid.className = "drag-ghost-grid";
+      grid.style.gridTemplateColumns = `repeat(${shape[0].length}, 18px)`;
+
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          const cell = document.createElement("div");
+          cell.className = "drag-ghost-cell";
+          if (shape[r][c]) cell.classList.add("drag-ghost-fill", getSkinClass());
+          grid.appendChild(cell);
+        }
+      }
+
+      ghost.appendChild(grid);
+      document.body.appendChild(ghost);
+      dragState.ghostEl = ghost;
+      moveGhost(x, y);
+    }
+
+    function moveGhost(x, y) {
+      if (!dragState.ghostEl) return;
+      dragState.ghostEl.style.left = `${x}px`;
+      dragState.ghostEl.style.top = `${y - 16}px`;
+    }
+
+    function removeGhost() {
+      if (dragState.ghostEl) {
+        dragState.ghostEl.remove();
+        dragState.ghostEl = null;
+      }
+    }
+
+    function startDrag(index, e) {
+      if (state.gameOver) return;
+      const shape = state.pieces[index];
+      if (!shape) return;
+
+      dragState.active = true;
+      dragState.pointerId = e.pointerId;
+      dragState.pieceIndex = index;
+      dragState.shape = shape;
+      dragState.preview = null;
+
+      state.selectedPieceIndex = index;
+      renderPieces();
+
+      createGhost(shape, e.clientX, e.clientY);
+
+      window.addEventListener("pointermove", onPointerMove, { passive:false });
+      window.addEventListener("pointerup", onPointerUp, { passive:false });
+      window.addEventListener("pointercancel", onPointerUp, { passive:false });
+      e.preventDefault();
+    }
+
+    function onPointerMove(e) {
+      if (!dragState.active) return;
+      e.preventDefault();
+      moveGhost(e.clientX, e.clientY);
+
+      const boardRect = boardEl.getBoundingClientRect();
+      const inside =
+        e.clientX >= boardRect.left &&
+        e.clientX <= boardRect.right &&
+        e.clientY >= boardRect.top &&
+        e.clientY <= boardRect.bottom;
+
+      if (!inside) {
+        dragState.preview = null;
+        renderBoard();
+        return;
+      }
+
+      const preview = nearestPlacementFromPoint(e.clientX, e.clientY, dragState.shape);
+      dragState.preview = preview;
+      renderBoard(preview);
+    }
+
+    function onPointerUp(e) {
+      if (!dragState.active) return;
+      e.preventDefault();
+
+      if (dragState.preview && dragState.preview.ok) {
+        placeShape(dragState.shape, dragState.preview.row, dragState.preview.col);
+        finishTurnAfterUsingPiece(dragState.pieceIndex);
+      } else if (dragState.preview && !dragState.preview.ok) {
+        playSound("bad");
+      }
+
+      cleanupDrag();
+      renderBoard();
+    }
+
+    function cleanupDrag() {
+      dragState.active = false;
+      dragState.pointerId = null;
+      dragState.pieceIndex = null;
+      dragState.shape = null;
+      dragState.preview = null;
+      removeGhost();
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    }
+
+    function handleBoardClick(e) {
+      if (!e.target.classList.contains("cell")) return;
+      const row = Number(e.target.dataset.row);
+      const col = Number(e.target.dataset.col);
+      tryPlaceByTap(row, col);
+    }
+
+    function newGame() {
+      state.board = emptyBoard();
+      state.score = 0;
+      state.combo = 0;
+      state.gameOver = false;
+      state.selectedPieceIndex = null;
+      generatePieces();
+      updateHeader();
+      renderBoard();
+      renderShop();
+      closeModal(gameOverModal);
+      closeModal(settingsModal);
+      showScreen("game");
+    }
+
+    function goHome() {
+      cleanupDrag();
+      closeModal(gameOverModal);
+      closeModal(settingsModal);
+      closeModal(starGuideModal);
+      showScreen("home");
+      updateHeader();
+    }
+
+    function playSound(type) {
+      if (!state.soundOn) return;
+
+      try {
+        const ctx = playSound.audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        playSound.audioCtx = ctx;
+        if (ctx.state === "suspended") ctx.resume();
+
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === "place") {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(560, now);
+          osc.frequency.exponentialRampToValueAtTime(680, now + 0.05);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.05, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+          osc.start(now); osc.stop(now + 0.09); return;
+        }
+        if (type === "clear") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(780, now);
+          osc.frequency.exponentialRampToValueAtTime(420, now + 0.12);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+          osc.start(now); osc.stop(now + 0.15); return;
+        }
+        if (type === "combo") {
+          osc.type = "square";
+          osc.frequency.setValueAtTime(700, now);
+          osc.frequency.setValueAtTime(880, now + 0.04);
+          osc.frequency.setValueAtTime(1040, now + 0.08);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.045, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+          osc.start(now); osc.stop(now + 0.17); return;
+        }
+        if (type === "buy") {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(660, now);
+          osc.frequency.setValueAtTime(880, now + 0.05);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.05, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+          osc.start(now); osc.stop(now + 0.13); return;
+        }
+        if (type === "bad") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.08);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.035, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+          osc.start(now); osc.stop(now + 0.1);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function bindEvents() {
+      boardEl.addEventListener("click", handleBoardClick);
+
+      document.getElementById("startGameBtn").addEventListener("click", newGame);
+      document.getElementById("openShopBtn").addEventListener("click", () => {
+        renderShop();
+        updateHeader();
+        showScreen("shop");
+      });
+      document.getElementById("shopBackBtn").addEventListener("click", () => showScreen("home"));
+      document.getElementById("openSettingsBtn").addEventListener("click", () => openModal(settingsModal));
+      document.getElementById("closeSettingsBtn").addEventListener("click", () => closeModal(settingsModal));
+      document.getElementById("showStarGuideBtn").addEventListener("click", () => openModal(starGuideModal));
+      document.getElementById("closeStarGuideBtn").addEventListener("click", () => closeModal(starGuideModal));
+      document.getElementById("goHomeBtn").addEventListener("click", goHome);
+      document.getElementById("gameOverHomeBtn").addEventListener("click", goHome);
+      document.getElementById("retryBtn").addEventListener("click", newGame);
+
+      document.getElementById("newGameBtn").addEventListener("click", newGame);
+      document.getElementById("soundToggleBtn").addEventListener("click", () => {
+        state.soundOn = !state.soundOn;
+        updateHeader();
+        saveState();
+        toast(state.soundOn ? "사운드를 켰어." : "사운드를 껐어.");
+      });
+
+      settingsModal.addEventListener("click", (e) => {
+        if (e.target === settingsModal) closeModal(settingsModal);
+      });
+      starGuideModal.addEventListener("click", (e) => {
+        if (e.target === starGuideModal) closeModal(starGuideModal);
+      });
+      gameOverModal.addEventListener("click", (e) => {
+        if (e.target === gameOverModal) closeModal(gameOverModal);
+      });
+    }
+
+    function init() {
+      loadState();
+      state.board = emptyBoard();
+      updateHeader();
+      renderBoard();
+      renderShop();
+      bindEvents();
+      showScreen("home");
+    }
+
+    init();
+  </script>
+</body>
+</html>
